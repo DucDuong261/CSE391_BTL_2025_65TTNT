@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>React Clock</title>
+  <style>
+    #root {
+      text-align: center;
+      margin-top: 20%;
+      font-family: Arial, sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- React and ReactDOM from CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+  <!-- Your React Component -->
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    
+
+    function formatDate(date) {
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      const seconds = date.getSeconds().toString().padStart(2, '0');
+      return `${hours}:${minutes}:${seconds}`;
+    }
+
+    function Clock() {
+      const [timeString, setTimeString] = useState('');
+
+      useEffect(() => {
+        const intervalId = setInterval(() => {
+          const now = new Date();
+          setTimeString(formatDate(now));
+        }, 1000);
+
+        return () => clearInterval(intervalId);
+      }, []);
+
+      return (
+        <div>
+          <h1>Đồng hồ thời gian thực</h1>
+        <p style={{ fontSize: '42px' }}>{timeString}</p>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<Clock />);
+
+   
+  </script>
+</body>
+</html>
