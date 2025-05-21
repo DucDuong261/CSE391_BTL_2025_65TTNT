@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 
 function formatDate(date){
+    const now = new Date();
+    const clock = document.getElementById('live-clock');
+    const greeting = document.getElementById('greeting');
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
     const seconds = date.getSeconds().toString().padStart(2, '0');
