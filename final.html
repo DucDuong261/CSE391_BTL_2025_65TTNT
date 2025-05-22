@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Đếm ngược & Bấm giờ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+  margin: 0;
+  font-family: 'Segoe UI', 'Roboto', sans-serif;
+  background: linear-gradient(to right, #e0f7fa, #ffffff);
+  color: #222;
+  transition: background 1s, color 1s;
+}
+
+body.dark {
+  background: linear-gradient(to right, #1e1e1e, #3a3a3a);
+  color: #f0f0f0;
+}
+
+h1, h2 {
+  text-align: center;
+  margin-top: 20px;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.clock {
+  font-size: 36px;
+  text-align: center;
+  margin: 10px 0;
+  color: #ff4081;
+  font-weight: bold;
+}
+
+.message {
+  text-align: center;
+  font-size: 20px;
+  margin-bottom: 30px;
+  font-style: italic;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 30px;
+  padding: 20px;
+}
+
+.box {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 25px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  width: 320px;
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.time {
+  font-size: 48px;
+  font-weight: bold;
+  margin: 20px 0;
+  color: #03a9f4;
+  text-align: center;
+}
+
+.end-message {
+  color: #4caf50;
+  font-weight: bold;
+  text-align: center;
+}
+
+.input-group {
+  text-align: center;
+  margin-top: 20px;
+}
+
+input[type="number"] {
+  width: 80px;
+  font-size: 18px;
+  padding: 6px;
+  border-radius: 8px;
+  border: 1px solid #888;
+  text-align: center;
+}
+
+button {
+  margin-left: 10px;
+  padding: 7px 15px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
+  background: #03a9f4;
+  color: white;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+button:hover {
+  background: #0288d1;
+}
+
+/* Đồng hồ tròn */
+.clock-analog {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin: 20px auto;
+  border: 8px solid #3498db;
+  border-radius: 50%;
+  background: #ecf0f1;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+}
+
+.hand {
+  position: absolute;
+  bottom: 50%;
+  left: 50%;
+  transform-origin: bottom;
+  transform: translateX(-50%) rotate(0deg);
+  border-radius: 2px;
+}
+
+.hand.hour {
+  width: 4px;
+  height: 50px;
+  background: #333;
+  z-index: 3;
+}
+
+.hand.minute {
+  width: 3px;
+  height: 70px;
+  background: #27ae60;
+  z-index: 2;
+}
+
+.hand.second {
+  width: 2px;
+  height: 90px;
+  background: #e74c3c;
+  z-index: 1;
+}
+
+.center-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  background: #333;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+}
+  </style>
+</head>
+<body class="light">
+  <h1>⏰ Đếm ngược & Bấm giờ</h1>
+  <div class="clock" id="live-clock">--:--:--</div>
+  <div class="message" id="greeting">Đang tải thông điệp...</div>
+
+  <div class="input-group">
+    <label>Nhập giây đếm ngược: </label>
+    <input id="input-seconds" type="number" min="1" max="600" value="10" />
+    <button id="start-countdown-btn">Bắt đầu đếm ngược</button>
+  </div>
+
+  <div class="container">
+    <div class="box" id="countdown-root"></div>
+    <div class="box" id="stopwatch-root"></div>
+  </div>
+
+  <div class="container">
+  <div class="box">
+    <h2>Đồng hồ kim</h2>
+    <div class="clock-analog">
+      <div class="hand hour" id="hour-hand"></div>
+      <div class="hand minute" id="minute-hand"></div>
+      <div class="hand second" id="second-hand"></div>
+      <div class="center-dot"></div>
+    </div>
+  </div>
+</div>
+
+
+  <!-- React CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+    function startAnalogClock() {
+  const hourHand = document.getElementById("hour-hand");
+  const minuteHand = document.getElementById("minute-hand");
+  const secondHand = document.getElementById("second-hand");
+
+  function updateAnalogClock() {
+    const now = new Date();
+    const sec = now.getSeconds();
+    const min = now.getMinutes();
+    const hour = now.getHours() % 12;
+
+    const secDeg = sec * 6; // 360 / 60
+    const minDeg = min * 6 + sec * 0.1;
+    const hourDeg = hour * 30 + min * 0.5;
+
+    secondHand.style.transform = `translate(-50%) rotate(${secDeg}deg)`;
+    minuteHand.style.transform = `translate(-50%) rotate(${minDeg}deg)`;
+    hourHand.style.transform = `translate(-50%) rotate(${hourDeg}deg)`;
+  }
+
+  updateAnalogClock();
+  setInterval(updateAnalogClock, 1000);
+}
+
+startAnalogClock();
+
+
+    // LIVE CLOCK & GREETING
+    function startLiveClock() {
+      function updateClockAndTheme() {
+        const now = new Date();
+        const clock = document.getElementById('live-clock');
+        const greeting = document.getElementById('greeting');
+        const h = String(now.getHours()).padStart(2, '0');
+        const m = String(now.getMinutes()).padStart(2, '0');
+        const s = String(now.getSeconds()).padStart(2, '0');
+        clock.textContent = `${h}:${m}:${s}`;
+
+        const isDark = now.getHours() >= 18 || now.getHours() < 6;
+        document.body.className = isDark ? 'dark' : 'light';
+
+        const msg = now.getHours() < 6 ? "Chúc bạn một đêm yên giấc 💤"
+                  : now.getHours() < 12 ? "Chào buổi sáng! ☀️"
+                  : now.getHours() < 18 ? "Buổi chiều vui vẻ 🌻"
+                  : "Buổi tối an lành 🌙";
+        greeting.textContent = msg;
+      }
+
+      updateClockAndTheme();
+      setInterval(updateClockAndTheme, 1000);
+    }
+
+    startLiveClock();
+
+    // COUNTDOWN COMPONENT
+    function Countdown({ start }) {
+      const [timeLeft, setTimeLeft] = useState(start);
+      const [ended, setEnded] = useState(false);
+
+      useEffect(() => {
+        if (start === null) return;
+        setTimeLeft(start);
+        setEnded(false);
+        const interval = setInterval(() => {
+          setTimeLeft(prev => {
+            if (prev > 1) return prev - 1;
+            clearInterval(interval);
+            setEnded(true);
+            return 0;
+          });
+        }, 1000);
+        return () => clearInterval(interval);
+      }, [start]);
+
+      return (
+        <div>
+          <h2>Đếm ngược</h2>
+          <div className="time">{timeLeft !== null ? `${timeLeft}s` : '--'}</div>
+          {ended && <div className="end-message">⏰ Hết giờ!</div>}
+        </div>
+      );
+    }
+
+    // STOPWATCH COMPONENT
+    function Stopwatch() {
+      const [seconds, setSeconds] = useState(0);
+      const [isRunning, setIsRunning] = useState(false);
+      const intervalRef = useRef(null);
+
+      useEffect(() => {
+        if (isRunning) {
+          intervalRef.current = setInterval(() => {
+            setSeconds(prev => prev + 1);
+          }, 1000);
+        } else {
+          clearInterval(intervalRef.current);
+        }
+
+        return () => clearInterval(intervalRef.current);
+      }, [isRunning]);
+
+      const formatTime = (sec) => {
+        const m = Math.floor(sec / 60).toString().padStart(2, '0');
+        const s = (sec % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+      };
+
+      return (
+        <div>
+          <h2>Bấm giờ</h2>
+          <div className="time">{formatTime(seconds)}</div>
+          <div className="stopwatch-controls">
+            <button onClick={() => setIsRunning(true)}>Start</button>
+            <button onClick={() => setIsRunning(false)}>Stop</button>
+            <button onClick={() => { setSeconds(0); setIsRunning(false); }}>Reset</button>
+          </div>
+        </div>
+      );
+    }
+
+    const countdownRoot = ReactDOM.createRoot(document.getElementById('countdown-root'));
+    const stopwatchRoot = ReactDOM.createRoot(document.getElementById('stopwatch-root'));
+    countdownRoot.render(<Countdown start={null} />);
+    stopwatchRoot.render(<Stopwatch />);
+
+    document.getElementById('start-countdown-btn').addEventListener('click', () => {
+      const val = parseInt(document.getElementById('input-seconds').value);
+      const seconds = isNaN(val) ? 10 : Math.max(1, Math.min(val, 600));
+      countdownRoot.render(<Countdown start={seconds} />);
+    });
+  </script>
+</body>
+</html>
