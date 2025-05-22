@@ -1,3 +1,4 @@
+//code thử effect
 import React, { useEffect, useState } from "react";
 
 function formatDate(date){
